@@ -1,0 +1,20 @@
+services:
+  fumadocs:
+    build:
+      context: .
+      target: dev
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PNPM_STORE_PATH: /pnpm-store
+    volumes:
+      - ./:/app
+      - pnpm-store:/pnpm-store
+    command: pnpm dev --hostname 0.0.0.0
+    working_dir: /app
+    tty: true
+    restart: unless-stopped
+
+volumes:
+  pnpm-store:
