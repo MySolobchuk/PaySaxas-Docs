@@ -1,45 +1,70 @@
-# paysaxas-docs
+# PaySaxas Docs
 
-This is a Next.js application generated with
-[Create Fumadocs](https://github.com/fuma-nama/fumadocs).
+Документація PaySaxas на базі Next.js та Fumadocs. Нижче — покрокові інструкції для роботи з контейнером, залежностями й OpenAPI.
 
-Run development server:
+## Вимоги
 
-```bash
-npm run dev
-# or
-pnpm dev
-# or
-yarn dev
-```
+- Docker + Docker Compose
+- У репозиторії є `Makefile`, який спрощує роботу з контейнером та скриптами
 
-Open http://localhost:3000 with your browser to see the result.
+## Основні команди
 
-## Explore
+Всі команди виконуються з кореня репозиторію.
 
-In the project, you can see:
+- `make build` — зібрати/перезібрати Docker-образ (`docker compose build`).
+- `make up` — підняти контейнер у фоні з командою `sleep infinity` (dev-сервер не стартує).
+- `make start` — запустити dev-сервер (`pnpm dev --hostname 0.0.0.0`) всередині вже піднятого контейнера.
+- `make dev` — синонім `make start`.
+- `make down` — зупинити контейнер (`docker compose down`).
+- `make restart` — рестарт сервісу `fumadocs`.
+- `make install` — встановити залежності всередині контейнера (`pnpm install`). Використовується, якщо `node_modules` відсутній.
+- `make logs` — перегляд логів контейнера (`docker compose logs -f fumadocs`).
+- `make clean` — зупинити контейнер і видалити томи (`docker compose down -v`).
+- `make openapi` — згенерувати MDX-документи з OpenAPI (`bun ./scripts/generate-docs.ts` у контейнері).
 
-- `lib/source.ts`: Code for content source adapter, [`loader()`](https://fumadocs.dev/docs/headless/source-api) provides the interface to access your content.
-- `lib/layout.shared.tsx`: Shared options for layouts, optional but preferred to keep.
+> **Примітка:** контейнер при старті перевіряє `node_modules`. Якщо директорії немає (наприклад, ви видалили її на хості), entrypoint автоматично виконує `pnpm install --frozen-lockfile` і лише потім виконує команду.
 
-| Route                     | Description                                            |
-| ------------------------- | ------------------------------------------------------ |
-| `app/(home)`              | The route group for your landing page and other pages. |
-| `app/docs`                | The documentation layout and pages.                    |
-| `app/api/search/route.ts` | The Route Handler for search.                          |
+## Робочий цикл
 
-### Fumadocs MDX
+1. **Підняти контейнер (без дев-сервера):**
+   ```bash
+   make build
+   make up
+   ```
+2. **Запустити dev-сервер:**
+   ```bash
+   make start
+   ```
+   Зупинка `Ctrl+C` зупиняє лише dev, контейнер продовжує працювати.
+3. **Зупинити контейнер повністю:**
+   ```bash
+   make down
+   ```
+4. **Оновити залежності (якщо видалили `node_modules`):**
+   ```bash
+   make install
+   ```
+5. **Перегенерувати документацію з OpenAPI:**
+   ```bash
+   make openapi
+   ```
 
-A `source.config.ts` config file has been included, you can customise different options like frontmatter schema.
+## Структура проекту
 
-Read the [Introduction](https://fumadocs.dev/docs/mdx) for further details.
+- `openapi/api.yaml` — основна OpenAPI-схема.
+- `scripts/generate-docs.ts` — скрипт генерації MDX-файлів із OpenAPI.
+- `content/docs` — згенеровані документи; основний вхід `index.mdx`.
+- `src/lib/openapi.ts` — конфігурація `createOpenAPI` з посиланням на схему.
+- `scripts/docker-entrypoint.sh` — entrypoint контейнера, який ставить залежності, якщо потрібні.
 
-## Learn More
+## Вбудований OpenAPI
 
-To learn more about Next.js and Fumadocs, take a look at the following
-resources:
+- Після редагування `openapi/api.yaml` викличте `make openapi`, щоб оновити MDX-файли.
+- Dev-сервер (`make start`) підхоплює зміни й показує API-розділ у Fumadocs.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js
-  features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [Fumadocs](https://fumadocs.dev) - learn about Fumadocs
+## Корисні посилання
+
+- [Next.js Docs](https://nextjs.org/docs)
+- [Fumadocs](https://fumadocs.dev)
+- [Fumadocs OpenAPI](https://fumadocs.dev/docs/ui/openapi)
+

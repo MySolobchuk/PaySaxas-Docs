@@ -5,7 +5,14 @@ WORKDIR /app
 ENV NODE_ENV=development
 
 # Ensure glibc compatibility for packages that rely on it
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat curl bash
+
+# Install Bun globally for running scripts like `bun ./scripts/...`
+RUN curl -fsSL https://bun.sh/install | bash \
+    && mv /root/.bun/bin/bun /usr/local/bin/bun \
+    && rm -rf /root/.bun
+
+ENV PATH="/usr/local/bin:${PATH}"
 
 # Enable pnpm through corepack (ships with Node 20)
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
@@ -16,12 +23,13 @@ COPY package.json pnpm-lock.yaml* ./
 COPY source.config.ts ./source.config.ts
 COPY content ./content
 
-# Install dependencies; fall back to non-frozen install when lockfile is missing
-RUN if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi
 
 FROM base AS dev
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+RUN chmod +x /app/scripts/docker-entrypoint.sh
+
 EXPOSE 3000
-CMD ["pnpm", "dev"]
+ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
+CMD ["sleep", "infinity"]

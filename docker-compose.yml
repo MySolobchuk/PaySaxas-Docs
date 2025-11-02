@@ -11,7 +11,7 @@ services:
     volumes:
       - ./:/app
       - pnpm-store:/pnpm-store
-    command: pnpm dev --hostname 0.0.0.0
+    command: ["sleep", "infinity"]
     working_dir: /app
     tty: true
     restart: unless-stopped
