@@ -1,0 +1,35 @@
+---
+title: Versioning & Lifecycle
+description: How PaySaxas versions its API and communicates change windows
+icon: BookOpen
+---
+
+PaySaxas versions the API to preserve backwards compatibility while letting teams adopt new features at their own pace.
+
+## Versioning Strategy
+- Endpoints are prefixed with a semantic version (for example, `/v1/`, `/v2/`).
+- Each major version represents a lifecycle stage, from launch to deprecation.
+- Breaking changes ship only with a new major version; minor releases are backwards compatible.
+
+## Specifying the Version
+You can target a specific version through the URL or through headers.
+
+| Method | How to use | Notes |
+| --- | --- | --- |
+| URL-based | `https://api.paysaxas.com/v1/...` | Useful for prototypes or single-version integrations. |
+| Header-based | `Accept: application/vnd.paysaxas.v1+json` | Recommended. Enables switching versions without touching endpoint paths. |
+
+Header negotiation is preferred for production workloads because it enables smoother migrations and gradual rollouts.
+
+## Deprecation Policy
+- Planned deprecations are announced in advance via developer updates, release notes, and response headers.
+- Deprecated versions remain accessible for a defined transition period.
+- Clients are expected to schedule migrations and validate behaviour in the new version before the retirement date.
+
+## Communication Channels
+Version launches, sunset timelines, and migration guides are shared through:
+- API changelogs and documentation updates.
+- Email notifications to registered contacts.
+- Platform status announcements and in-app messaging.
+
+Stay subscribed to these channels to avoid surprises and keep your integration current.

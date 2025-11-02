@@ -12,7 +12,7 @@
 Всі команди виконуються з кореня репозиторію.
 
 - `make build` — зібрати/перезібрати Docker-образ (`docker compose build`).
-- `make up` — підняти контейнер у фоні з командою `sleep infinity` (dev-сервер не стартує).
+- `make up` — підняти контейнер у фоні з командою `sleep infinity` (dev-сервер не стартує, однак watcher `fumadocs-mdx --watch` уже працює у фоні та підхоплює зміни контенту).
 - `make start` — запустити dev-сервер (`pnpm dev --hostname 0.0.0.0`) всередині вже піднятого контейнера.
 - `make dev` — синонім `make start`.
 - `make down` — зупинити контейнер (`docker compose down`).
@@ -36,6 +36,7 @@
    make start
    ```
    Зупинка `Ctrl+C` зупиняє лише dev, контейнер продовжує працювати.
+   Файли в `content`, `src` відстежуються через polling, а `fumadocs-mdx --watch` у контейнері оновлює `.source` при змінах.
 3. **Зупинити контейнер повністю:**
    ```bash
    make down
@@ -67,4 +68,3 @@
 - [Next.js Docs](https://nextjs.org/docs)
 - [Fumadocs](https://fumadocs.dev)
 - [Fumadocs OpenAPI](https://fumadocs.dev/docs/ui/openapi)
-

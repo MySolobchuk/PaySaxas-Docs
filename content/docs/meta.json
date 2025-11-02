@@ -1,0 +1,16 @@
+{
+  "title": "PaySaxas Documentation",
+  "description": "Guides and API references for building on PaySaxas",
+  "icon": "BookOpen",
+  "root": true,
+  "defaultOpen": true,
+  "pages": [
+    "index",
+    "Accounts",
+    "Payments",
+    "Confirmation",
+    "OpenAPI",
+    "Guides",
+    "Glossary"
+  ]
+}

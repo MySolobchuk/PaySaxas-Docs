@@ -1,0 +1,72 @@
+---
+title: Pagination, Filtering & Sorting
+description: How to navigate large datasets returned by the PaySaxas API
+icon: ListFilter
+---
+
+PaySaxas supports cursor and offset pagination, plus rich filtering and sorting, so that large result sets stay predictable even as data changes.
+
+## Why Pagination Matters
+- Prevents overfetching and large payloads.
+- Keeps responses stable when records are added or removed.
+- Enables consistent UX — clients can request additional pages without missing or duplicating entries.
+
+## Supported Pagination Styles
+| Style | Parameters | When to use |
+| --- | --- | --- |
+| Cursor-based | `cursor`, `limit` | Preferred for frequently changing or high-volume datasets. Ensures stable ordering between requests. |
+| Offset-based | `offset`, `limit` | Simpler for smaller datasets or ad-hoc queries. May shift records if data changes between calls. |
+
+### Basic Query Examples
+- Cursor: `GET /v1/payments?cursor=eyJpZCI6IjEyMyJ9&limit=50`
+- Offset: `GET /v1/customers?offset=100&limit=20`
+
+## Common Query Parameters
+| Parameter | Type | Applies to | Description / Example |
+| --- | --- | --- | --- |
+| `limit` | integer | all | Max items per page (`default: 20`, `max: 100`). Example: `?limit=50`. |
+| `offset` | integer | all (offset pagination) | Items to skip. Example: `?offset=100`. |
+| `cursor` | string | all (cursor pagination) | Encoded pointer to the next page. Example: `?cursor=eyJpZCI6IjEyMyJ9`. |
+| `sort_by` | string | all | Field to order by (`created_at`, `updated_at`, `iban`, `amount`, `status`, `name`). Example: `?sort_by=created_at`. |
+| `order` | string | all | Sort direction (`asc` or `desc`). Example: `?order=desc`. |
+| `status` | string | customers, accounts, payments, transactions | Filter by lifecycle status. Example: `?status=active`. |
+| `created_after` | ISO 8601 string | all | Only return records created after the timestamp. Example: `?created_after=2025-01-01T00:00:00Z`. |
+| `created_before` | ISO 8601 string | all | Only return records created before the timestamp. Example: `?created_before=2025-12-31T23:59:59Z`. |
+| `iban` | string | accounts, payments | Filter by full or partial IBAN. Example: `?iban=DE02120300000000202051`. |
+| `account_id` | string | transactions, payments | Restrict results to a specific account. Example: `?account_id=acc_101`. |
+| `date_from` | ISO 8601 string | transactions, statements | Start date for reporting windows. Example: `?date_from=2025-10-01`. |
+| `date_to` | ISO 8601 string | transactions, statements | End date for reporting windows. Example: `?date_to=2025-10-27`. |
+| `amount` / `amount_from` / `amount_to` | number / range | transactions, payments | Filter by amount or range. Example: `?amount=100.00` or `?amount_from=50&amount_to=200`. |
+| `type` | string | transactions | Filter by direction (`incoming`, `outgoing`). Example: `?type=incoming`. |
+| `reference` | string | transactions, payments | Match by reference or memo field. Example: `?reference=INV-1024`. |
+| `customer_id` | string | accounts, payments | Filter by owning customer. Example: `?customer_id=cust_001`. |
+| `integration_id` | string | webhooks, events | Filter events emitted by a specific integration. |
+| `per_page` | integer | legacy endpoints | Alias of `limit` on older resources. |
+
+## Sorting Guidelines
+- Combine `sort_by` with `order` to ensure consistent ordering.
+- When using cursor pagination, embed the sort field in the cursor to avoid duplicates.
+- Sorting by timestamps (for example, `created_at`) is safest when combined with cursor pagination.
+
+## Filtering Tips
+- Multiple filters can be combined in a single request.
+- Blank or invalid filters are ignored; validation errors return `400 VALIDATION_ERROR`.
+- When searching by identifiers (IBAN, account ID), prefer exact matches for optimal performance.
+
+## Handling Next Pages
+```http
+GET /v1/payments?cursor=eyJpZCI6IjEyMyJ9&limit=50
+```
+
+The response returns the next `cursor` token. Use that value on the subsequent call; stop when the token is `null`.
+
+## Error Handling
+- Requests missing required pagination parameters return `422 VALIDATION_ERROR`.
+- Requests beyond the last page return an empty `data` array with `cursor: null`.
+- If filters conflict (for example, invalid date range) the response returns `400 VALIDATION_ERROR` with details.
+
+## Best Practices for Integrators
+1. Default to cursor pagination on high-churn resources (payments, transactions).
+2. Persist cursors between retries to avoid skipping data.
+3. Use conservative limits (`<= 50`) to minimise payload size and latency.
+4. Degrade gracefully when filters or sort options are not supported by older versions.

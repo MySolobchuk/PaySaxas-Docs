@@ -17,15 +17,7 @@ ENV PATH="/usr/local/bin:${PATH}"
 # Enable pnpm through corepack (ships with Node 20)
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 
-FROM base AS deps
-# Copy manifest files and config needed during dependency installation
-COPY package.json pnpm-lock.yaml* ./
-COPY source.config.ts ./source.config.ts
-COPY content ./content
-
-
 FROM base AS dev
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 RUN chmod +x /app/scripts/docker-entrypoint.sh
