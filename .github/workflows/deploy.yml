@@ -17,6 +17,9 @@ concurrency:
 jobs:
     build:
         runs-on: ubuntu-latest
+        env:
+            NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+            NEXT_TELEMETRY_DISABLED: '1'
         steps:
             -
                 uses: actions/checkout@v4
@@ -42,7 +45,6 @@ jobs:
                 name: Build
                 env:
                     NODE_ENV: production
-                    NEXT_TELEMETRY_DISABLED: '1'
                 run: pnpm build
 
             -
