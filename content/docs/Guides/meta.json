@@ -3,8 +3,7 @@
   "icon": "Compass",
   "pages": [
     "versioning-lifecycle",
-    "rate-limiting",
-    "pagination-filtering-sorting",
+    "pagination",
     "idempotency",
     "errors",
     "operational",

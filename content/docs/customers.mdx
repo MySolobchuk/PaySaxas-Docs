@@ -9,19 +9,25 @@ icon: Users
 The Customers API manages personal (B2C) and business (B2B) clients within the PaySaxas ecosystem.
 Each customer represents a verified legal entity or natural person and has its own lifecycle, verification flow, and compliance context.
 
-> Multi-Entity Access Model
+> ***Multi-Entity Access Model***
 > A single login (email) can control multiple onboarded profiles:
 >
-> Personal profile (type: individual) — verified via KYC.
-> Corporate profile(s) (type: business) — verified via KYB.
-> Each profile receives its own customer_id, verification session, accounts, and webhook audit trail.
-> Data, accounts, and transactions are isolated per profile and never shared between personal and corporate contexts.
-> Switching between profiles in the dashboard changes operational scope only — not data ownership.
+> - ***Individual*** profile ( type: individual) — verified via KYC.
+> - ***Business*** profile(s) (type: business) — verified via KYB.
+Each profile receives its own , verification session, accounts, and webhook audit trail. customer_id
+Data, accounts, and transactions are isolated per profile and never shared between and business contexts. individual
+Switching between profiles in the dashboard changes operational scope only — not data ownership.
 
 #### References
 
-- FATF Guidance on Digital ID (2020)
-- EBA Guidelines on Customer Due Diligence (EBA/GL/2021/02)
+<a href="https://www.fatf-gafi.org/content/dam/fatf-gafi/guidance/Guidance-on-Digital-Identity.pdf" target="_blank" rel="noopener noreferrer">
+    - FATF Guidance on Digital ID (2020)
+</a>
+
+<a href="https://www.eba.europa.eu/sites/default/files/document_library/Publications/Guidelines/2021/963637/Final%20Report%20on%20Guidelines%20on%20revised%20ML%20TF%20Risk%20Factors.pdf" target="_blank" rel="noopener noreferrer">
+    - EBA Guidelines on Customer Due Diligence (EBA/GL/2021/02)
+</a>
+
 
 ### Customer Process Flow & Statuses
 
@@ -43,10 +49,10 @@ Contains only the unique customer identifier — no PII, statuses, or metadata a
 
 ```json
 {
-"event": "customer.status.changed",
-"data": {
-"id": "cust_92f3e1b9"
-}
+  "event": "customer.status.changed",
+  "data": {
+    "id": "cust_92f3e1b9"
+  }
 }
 ```
 
@@ -64,21 +70,21 @@ Notes:
 
 ```json
 {
-"id": "cust_8b29e3",
-"type": "business",
-"status": "compliance_pending",
-"created_at": "2025-10-30T10:31:00Z"
+  "id": "cust_8b29e3",
+  "type": "business",
+  "status": "compliance_pending",
+  "created_at": "2025-10-30T10:31:00Z"
 }
 ```
 
 ### 4. Endpoints
 
-| Method | Endpoint | Description | Success | Typical Errors |
-| --- | --- | --- | --- | --- |
-| POST | /customers | Create a new customer (individual or business). | 201 Created | 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 INSUFFICIENT_PERMISSIONS, 409 DUPLICATE_CUSTOMER |
-| GET | /customers | Retrieve a paginated list of customers. | 200 OK | 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 INSUFFICIENT_PERMISSIONS |
-| GET | `/customers/{id}` | Retrieve customer details. | 200 OK | 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 INSUFFICIENT_PERMISSIONS, 404 CUSTOMER_NOT_FOUND |
-| PATCH | `/customers/{id}` | Update customer metadata or internal notes. | 200 OK | 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 INSUFFICIENT_PERMISSIONS, 404 CUSTOMER_NOT_FOUND, 409 CONFLICT |
+| Method | Endpoint          | Description                                     | Success     | Typical Errors                                                                                             |
+|--------|-------------------|-------------------------------------------------|-------------|------------------------------------------------------------------------------------------------------------|
+| POST   | /customers        | Create a new customer (individual or business). | 201 Created | 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 INSUFFICIENT_PERMISSIONS, 409 DUPLICATE_CUSTOMER               |
+| GET    | /customers        | Retrieve a paginated list of customers.         | 200 OK      | 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 INSUFFICIENT_PERMISSIONS                                       |
+| GET    | `/customers/{id}` | Retrieve customer details.                      | 200 OK      | 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 INSUFFICIENT_PERMISSIONS, 404 CUSTOMER_NOT_FOUND               |
+| PATCH  | `/customers/{id}` | Update customer metadata or internal notes.     | 200 OK      | 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 INSUFFICIENT_PERMISSIONS, 404 CUSTOMER_NOT_FOUND, 409 CONFLICT |
 
 #### Scopes
 
