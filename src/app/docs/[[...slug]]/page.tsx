@@ -9,13 +9,15 @@ import { notFound } from 'next/navigation';
 import { getMDXComponents } from '@/mdx-components';
 import type { Metadata } from 'next';
 import { createRelativeLink } from 'fumadocs-ui/mdx';
+import type { ComponentType } from 'react';
 
 export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
   const params = await props.params;
   const page = source.getPage(params.slug);
   if (!page) notFound();
 
-  const MDX = page.data.body;
+  const { body } = page.data as unknown as { body: ComponentType<any> | undefined };
+  const MDX = body ?? (() => null);
 
   return (
     <DocsPage toc={page.data.toc} full={page.data.full}>
