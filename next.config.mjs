@@ -8,7 +8,7 @@ const basePath = isCI && repo ? `/${repo}` : '';
 
 /** @type {import('next').NextConfig} */
 const basePathFromEnv = process.env.NEXT_PUBLIC_BASE_PATH?.trim();
-const effectiveBasePath = basePathFromEnv || basePathCI;
+const effectiveBasePath = basePathFromEnv || basePath;
 
 const config = {
     reactStrictMode: true,
@@ -16,8 +16,8 @@ const config = {
     images: {
         unoptimized: true,
     },
-    basePath,
-    assetPrefix: basePath || undefined,
+    effectiveBasePath,
+    assetPrefix: effectiveBasePath || undefined,
     trailingSlash: true,
     env: {
         NEXT_PUBLIC_BASE_PATH: effectiveBasePath || '',
