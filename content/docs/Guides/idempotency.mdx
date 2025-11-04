@@ -4,78 +4,44 @@ description: Using X-Request-Id to avoid duplicate writes
 icon: Repeat
 ---
 
-Write endpoints in PaySaxas are idempotent when you provide a unique `X-Request-Id`. This lets you safely retry requests that might have timed out or failed due to transient network issues.
+To reliably trace operations and prevent accidental duplicate submissions, PaySaxas requires a unique client-supplied request identifier for all write
+operations.
 
-## Core Rules
-- `X-Request-Id` must be a UUIDv4 generated per write operation.
-- The same ID with the exact same payload returns the original result.
-- Reusing an ID with a **different** payload returns `409 Conflict` with `idempotency_conflict`.
-- Idempotency applies to `POST`, `PUT`, `PATCH`, and `DELETE`. `GET` requests must remain side-effect free and do not require the header.
+#### Header
 
-## Retention Window
-- Idempotency records persist for **24 hours** from the first successful execution.
-- After the window expires, the server treats the ID as new and processes the request again.
+Each write request must include a unique identifier:
 
-## Recommended Client Workflow
-1. Generate a UUID (`X-Request-Id`) for each write call.
-2. Persist the ID alongside the request payload in case a retry is needed.
-3. On retry (for example, after a timeout), reuse the same ID and payload.
-4. Log the ID end-to-end so support teams can trace requests.
+`X-Request-Id: UUIDv4`
 
-## Example Requests
-### First attempt
+> PaySaxas logs each X-Request-Id for traceability and audit purposes.
+> The same structure will be used for future idempotent write support.
+
+#### Recommended client practices
+
+- Generate a UUIDv4 per write request (POST, PUT, PATCH, DELETE).
+- Do not reuse an ID across different operations or payloads.
+- Log and propagate X-Request-Id throughout your systems to enable debugging and monitoring.
+- Retry network or timeout errors using a new X-Request-Id.
+
+
+#### Example
 ```bash
 curl -X POST https://api.paysaxas.com/v1/payments \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -H "X-Request-Id: 550e8400-e29b-41d4-a716-446655440000" \
-  -d '{
-    "debtor_account_id": "acc_123",
-    "amount": "100.00",
-    "currency": "EUR",
-    "reference": "INV-1001",
-    "counterparty": {
-      "iban": "DE02120300000000202051",
-      "name": "ACME GmbH"
-    }
-  }'
-```
-**Response**
-```http
-201 Created
-X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
-{
-  "id": "pay_abc123",
-  "status": "pending",
-  "amount": "100.00",
-  "currency": "EUR"
+-H "Authorization: Bearer <ACCESS_TOKEN>" \
+-H "Content-Type: application/json" \
+-H "X-Request-Id: 550e8400-e29b-41d4-a716-446655440000" \
+-d '{
+"debtor_account_id": "acc_123",
+"amount": "100.00",
+"currency": "EUR",
+"reference": "INV-1001",
+"counterparty": {
+"iban": "FI0212030000000202051",
+"name": "ACME Oy"
 }
+}'
 ```
 
-### Automatic retry (network timeout on first attempt)
-```http
-200 OK
-X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
-Idempotent-Replay: true
-{
-  "id": "pay_abc123",
-  "status": "pending",
-  "amount": "100.00",
-  "currency": "EUR"
-}
-```
-
-### Conflict (same ID, different payload)
-```http
-409 Conflict
-X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
-{
-  "error": "idempotency_conflict",
-  "error_description": "Different payload detected for the same X-Request-Id within the idempotency window."
-}
-```
-
-## Additional Notes
-- The server may include `Idempotent-Replay: true` to indicate that a cached result was returned; treat it as informational.
-- Do not put sensitive data inside `X-Request-Id`; use opaque UUIDs only.
-- Propagate the same ID through your internal logs and downstream systems to simplify support investigations.
+> Note:
+> Full idempotent behaviour (automatic deduplication of repeated requests with the same X-Request-Id) will be introduced in a later
+> API release.

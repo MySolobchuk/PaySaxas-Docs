@@ -6,6 +6,11 @@
     "rate-limiting",
     "pagination-filtering-sorting",
     "idempotency",
-    "errors"
+    "errors",
+    "operational",
+    "openapi_postman",
+    "safeguarding",
+    "deprecation",
+    "security"
   ]
 }

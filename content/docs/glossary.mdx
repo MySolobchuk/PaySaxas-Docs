@@ -44,3 +44,18 @@ Definitions of common terms and abbreviations used throughout the documentation.
 | Traceparent                   | HTTP header used for distributed tracing across systems and services.                                                             |
 | Transaction                   | A record of financial movement (incoming or outgoing) within an account.                                                          |
 | UUID                          | Universally Unique Identifier used as IDs for entities like customers or webhooks.                                                |
+| Verification of Payee (VoP)   | Name-check mechanism validating that the beneficiary’s account matches the intended recipient.                                    |
+| vIBAN (Virtual IBAN)          | Sub-IBAN linked to a main account for identifying incoming payments by payer or use case.                                         |
+| Webhook Callback              | Notification sent by PaySaxas to inform clients about system events (e.g., payment.settled).                                      |
+| Webhook Signature             | Cryptographic signature (HMAC/JWS) used to verify the authenticity of webhook messages.                                           |
+| JWKS (JSON Web Key Set)       | JSON structure containing a set of public keys used for verifying signatures.                                                     |
+| X-Request-Id                  | Header containing a unique identifier for correlating requests across systems.                                                    |
+| Digest Header                 | SHA-256 hash of the request body, required for JWS signature validation.                                                          |
+| Sunset Header                 | HTTP header indicating deprecation or end-of-support date for an API version.                                                     |
+| Retry Policy                  | Strategy for retrying failed webhook deliveries using exponential backoff.                                                        |
+| Sandbox                       | Testing environment that simulates production without using live data.                                                            |
+| API Versioning                | Mechanism for managing backward compatibility and introducing new endpoints (/v1, /v2, etc.).                                     |
+| Anti-Replay                   | Security measure ensuring a signed request cannot be reused after expiry.                                                         |
+| Trace ID                      | Unique identifier used for correlating logs and traces across requests.                                                           |
+| Incident                      | An event that disrupts normal API or platform operation, requiring support action.                                                |
+| Backoff Strategy              | Progressive delay mechanism for retrying failed webhooks or API requests.                                                         |

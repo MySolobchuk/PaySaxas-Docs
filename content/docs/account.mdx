@@ -1,0 +1,133 @@
+---
+title: Accounts
+description: Account lifecycle, statuses, and vIBAN operations
+icon: Banknote
+---
+
+Management of customer accounts.
+
+Each Account represents an internal ledger object linked to a verified Customer (either Individual or Business).
+Accounts are used to hold balances, process payments, and manage compliance-related activity within the PaySaxas ecosystem.
+
+#### Definition
+
+> An Account is a unique financial record within the ledger associated with one verified customer.
+> Each account is created in a single currency and has its own lifecycle and identifiers (account ID, vIBAN, status).
+> Account types define operational purpose:
+
+- Personal Account — created for individual (KYC) clients.
+- Business Account — created for corporate (KYB) clients.
+
+Relationship:
+
+> One Customer many Accounts (1:N relationship).
+> An account cannot exist without a verified customer.
+> Account identifiers are immutable once created.
+
+#### Account Opening — Payloads & Responses
+
+Process for account creation, validation, and lifecycle management.
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| POST | /accounts | Creates a new account for a verified customer. |
+| GET | /accounts | Retrieves a list of all accounts associated with the verified customer. |
+| GET | `/accounts/{id}` | Retrieves detailed information about a specific account (currency, balances, status, metadata). |
+
+| Method | Endpoint | Link |
+| --- | --- | --- |
+| POST | /accounts | POST /accounts — Create an Account |
+| GET | /accounts | GET /accounts — List Accounts |
+| GET | `/accounts/{id}` | GET `/accounts/{id}` — Retrieve Account Details |
+#### Lifecycle & Status Flow
+
+Account lifecycles differ slightly for Individual and Corporate customers.
+
+##### Individual Account Flow (automatic transitions)
+
+| Status | Transition Type | Description / Trigger |
+| --- | --- | --- |
+| Void | auto | Initial placeholder — account record created but not yet reserved or active. |
+| Reserved | auto | Account structure reserved (currency assigned, ledger entry prepared). Awaiting KYC completion. |
+| Active | auto | Account verified and fully operational. Customer can send and receive payments. |
+| Closed | manual | Account manually closed due to offboarding, inactivity, or compliance decision. |
+
+> Closing Path: Active Closed (manual)
+
+##### Corporate Account Flow (manual transitions)
+
+| Status | Transition Type | Description / Trigger |
+| --- | --- | --- |
+| Void | manual | Placeholder account created by operator or via integration before activation. |
+| Reserved | manual | Account prepared; KYB completed, awaiting internal compliance sign-off. |
+| Active | manual | Account manually activated by operator after successful review. |
+| Closed | manual | Account manually closed by compliance or support (offboarding or business termination). |
+
+> Closing Path: Active Closed (manual)
+
+#### Account Creation Flow
+
+To successfully create an account:
+
+- Customer must exist — only verified KYC/KYB customers are eligible.
+- Required fields:
+  - customer_id — unique verified customer reference.
+  - currency — supported currency code (ISO 4217).
+  - account_type — personal or business.
+- Optional fields:
+  - metadata — internal information (purpose, label, internal reference).
+- Validation:
+  - Account cannot be duplicated for the same customer–currency pair.
+  - Invalid or unsupported currency triggers 400 VALIDATION_ERROR.
+
+**5. Result:**
+
+> On success, a new account object is created in reserved or active state depending on the configuration.
+#### Field Validation Requirements
+
+| Field | Type | Required | Rules |
+| --- | --- | --- | --- |
+| customer_id | string |  | Must belong to an existing verified customer. |
+| currency | string |  | Must be supported (ISO 4217 format). |
+| account_type | string |  | Allowed values: personal, business. |
+| metadata | object | optional | Custom parameters for internal use. |
+#### Status Lifecycle Summary
+
+| Phase | Statuses Included | Notes |
+| --- | --- | --- |
+| Setup | Void Reserved | Account structure created and validated. |
+| Operational | Active | Account is ready for payments and reporting. |
+| Termination | Closed | Manual deactivation or offboarding. |
+#### vIBANs
+
+Operations for issuing and managing virtual IBANs linked to an account.
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| POST | `/accounts/{id}/ibans` | Issues a new virtual IBAN linked to the specified account. |
+| GET | `/accounts/{id}/ibans` | Returns all virtual IBANs associated with the account. |
+
+| Method | Endpoint | link |
+| --- | --- | --- |
+| POST | `/accounts/{id}/ibans` | POST `/accounts/{id}/ibans` — Issue a New vIBAN |
+| GET | `/accounts/{id}/ibans` | GET `/accounts/{id}/ibans` — List vIBANs for an Account |
+
+**Must include:**
+
+- Description of how virtual IBANs are used for incoming and outgoing payments.
+- Typical response fields: iban, bic, currency, status, created_at.
+- Example payloads for successful issuance and error cases.
+Example (safe format):
+
+```json
+{
+"iban": "DE00PAY0000000000",
+"bic": "PAYSA0XXX",
+"currency": "EUR",
+"status": "active",
+"created_at": "2025-01-15T10:00:00Z"
+}
+```
+
+> IBAN and BIC are examples only — not real financial identifiers.
+### Webhooks (Account events)
