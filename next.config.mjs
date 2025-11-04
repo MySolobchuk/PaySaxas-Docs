@@ -1,18 +1,27 @@
-import { createMDX } from 'fumadocs-mdx/next';
+import {createMDX} from 'fumadocs-mdx/next';
 
 const withMDX = createMDX();
+/** @type {import('next').NextConfig} */
+const repo = process.env.GITHUB_REPOSITORY?.split('/')[1] ?? '';
+const isCI = !!process.env.GITHUB_ACTIONS;
+const basePath = isCI && repo ? `/${repo}` : '';
 
 /** @type {import('next').NextConfig} */
 const basePathFromEnv = process.env.NEXT_PUBLIC_BASE_PATH?.trim();
+const effectiveBasePath = basePathFromEnv || basePathCI;
 
 const config = {
-  reactStrictMode: true,
-  output: 'export',
-  images: {
-    unoptimized: true,
-  },
-  basePath: basePathFromEnv ? basePathFromEnv : undefined,
-  assetPrefix: basePathFromEnv ? basePathFromEnv : undefined,
+    reactStrictMode: true,
+    output: 'export',
+    images: {
+        unoptimized: true,
+    },
+    basePath,
+    assetPrefix: basePath || undefined,
+    trailingSlash: true,
+    env: {
+        NEXT_PUBLIC_BASE_PATH: effectiveBasePath || '',
+    },
 };
 
 export default withMDX(config);
