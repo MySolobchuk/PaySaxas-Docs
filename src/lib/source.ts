@@ -5,7 +5,7 @@ import {openapiPlugin} from 'fumadocs-openapi/server';
 
 // See https://fumadocs.dev/docs/headless/source-api for more info
 export const source = loader({
-    baseUrl: ((process.env.NEXT_PUBLIC_BASE_PATH ?? '') + '/docs').replace(/\/+/g, '/'),
+    baseUrl: '/docs',
     source: docs.toFumadocsSource(),
     plugins: [lucideIconsPlugin(), openapiPlugin()] as any,
 });
