@@ -35,7 +35,7 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      - name: Build (static export via Next 16 output: export)
+      - name: Build
         run: pnpm build
 
       - name: Configure Pages
