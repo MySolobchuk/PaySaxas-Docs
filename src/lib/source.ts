@@ -7,7 +7,7 @@ import { openapiPlugin } from 'fumadocs-openapi/server';
 export const source = loader({
   baseUrl: '/docs',
   source: docs.toFumadocsSource(),
-  plugins: [lucideIconsPlugin(), openapiPlugin()],
+  plugins: [lucideIconsPlugin(), openapiPlugin()] as any,
 });
 
 export function getPageImage(page: InferPageType<typeof source>) {
