@@ -42,6 +42,8 @@ Process for account creation, validation, and lifecycle management.
 | Active   | Account verified and fully operational. The client (Business or Individual) can send and receive payments.                            |
 | Closed   | Account manually closed due to offboarding, inactivity, compliance decision, or business termination.                                 |
 
+Closing Path: Active → Closed (manual)
+
 #### Account Creation Flow
 
 To successfully create an account:
@@ -82,14 +84,14 @@ To successfully create an account:
 | Setup       | Inactive Reserved | Account record created and validated, awaiting verification.           |
 | Operational | Active            | Account is fully verified and ready for payments and reporting.        |
 | Termination | Closed            | Manual deactivation or offboarding triggered by compliance or support. |
-#### vIBANs
+#### IBANs
 
-Operations for issuing and managing virtual IBANs linked to an account.
+Operations for issuing and managing IBANs linked to an account.
 
-| Method | Endpoint                                                         | Description                                                |
-|--------|------------------------------------------------------------------|------------------------------------------------------------|
-| POST   | [`/accounts/{id}/ibans`](../OpenAPI/accounts/issueNewIban)       | Issues a new virtual IBAN linked to the specified account. |
-| GET    | [`/accounts/{id}/ibans`](../OpenAPI/accounts/listIbansByAccount) | Returns all virtual IBANs associated with the account.     |
+| Method | Endpoint                                                         | Description                                        |
+|--------|------------------------------------------------------------------|----------------------------------------------------|
+| POST   | [`/accounts/{id}/ibans`](../OpenAPI/accounts/issueNewIban)       | Issues a new IBAN linked to the specified account. |
+| GET    | [`/accounts/{id}/ibans`](../OpenAPI/accounts/listIbansByAccount) | Returns all IBANs associated with the account.     |
 
 IBANs are used to enable both incoming and outgoing payments for customer accounts.
 Each issued IBAN is uniquely linked to an account and can be used to receive SEPA transfers or initiate outgoing payments under the same customer

@@ -43,7 +43,6 @@ Structure is aligned with RFC 7807 – Problem Details for HTTP APIs.
 | Code                       | HTTP        | Meaning                                              | Typical Resolution                                     |
 |----------------------------|-------------|------------------------------------------------------|--------------------------------------------------------|
 | `VALIDATION_ERROR`         | `400 / 422` | Field validation failed.                             | Check schema, types, and mandatory fields.             |
-| `INVALID_SIGNATURE`        | `400`       | JWS or HMAC signature verification failed.           | Regenerate the signature using the correct secret.     |
 | `UNAUTHORIZED`             | `401`       | Missing or invalid OAuth token.                      | Request a new OAuth 2.1 token and retry.               |
 | `INSUFFICIENT_PERMISSIONS` | `403`       | Token scope does not allow the action.               | Use the correct scope (for example, `payments:write`). |
 | `RESOURCE_NOT_FOUND`       | `404`       | Entity not found (customer, account, payment, etc.). | Verify the resource ID or creation step.               |

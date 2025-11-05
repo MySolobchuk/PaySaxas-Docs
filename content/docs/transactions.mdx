@@ -20,17 +20,17 @@ However, the public API exposes a single normalised status model:
 | processing | Under AML, compliance, or operational checks.            |
 | completed  | Completed and reconciled.                                |
 | failed     | Could not be processed (technical or regulatory reason). |
-| reversed   | Funds refunded or reversed after rejection.              |
+| returned   | Funds refunded or reversed after rejection.              |
 
 > Internal routing (e.g., “AML Review”, “Finance Freeze”, “Settlement Exception”) is never exposed in API responses.
 > Provider-specific transitions are aggregated into these unified statuses.
 
 ### Endpoints
 
-| Method | Endpoint                                                           | Description                                            |
-|--------|--------------------------------------------------------------------|--------------------------------------------------------|
-| GET    | [`/transactions`](../OpenAPI/transactions/listTransactions)        | Returns a list of transactions filtered by parameters. |
-| GET    | [`/transactions/{id}`](../OpenAPI/transactions/getTransactionById) | Returns full transaction details.                      |
+| Method | Endpoint                                                           | Description                       |
+|--------|--------------------------------------------------------------------|-----------------------------------|
+| GET    | [`/transactions`](../OpenAPI/transactions/listTransactions)        | Returns a list of transactions.   |
+| GET    | [`/transactions/{id}`](../OpenAPI/transactions/getTransactionById) | Returns full transaction details. |
 
 ### Webhooks — Transaction Events
 

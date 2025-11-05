@@ -22,7 +22,7 @@ Incoming SEPA credits are processed through an automated pipeline that validates
 successful verification.
 
 #### Typical sequence:
-Received Account Validation AML Screening Compliance Hold (if any) Safeguard Fee Deduction Settled (Completed)
+Received -> Account Validation -> AML Screening -> Compliance -> Hold (if any) -> Safeguard -> Fee Deduction -> Settled (Completed)
 
 - Each stage represents an internal state transition within the PaySaxas system.
 - All funds are safeguarded during compliance screening.
@@ -36,7 +36,7 @@ Outgoing SEPA transfers follow an automated lifecycle from order creation to set
 Each stage ensures AML and regulatory compliance, liquidity validation, and reconciliation.
 
 #### Typical sequence:
-Payment Created AML Screening Execution Settlement Completed
+Payment Created -> AML Screening -> Execution -> Settlement -> Completed
 
 - Payments are executed via approved rails under PSD2 and SEPA guidelines.
 - Failures or rejections automatically trigger status updates and webhook events.
@@ -56,7 +56,7 @@ Payment Created AML Screening Execution Settlement Completed
 
 | Method | Endpoint                                                           | Description                                                                                              |
 |--------|--------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
-| GET    | [`/transactions`](../OpenAPI/transactions/listTransactions)        | Lists all incoming transactions (SEPA IN, internal transfers, refunds).                                  |
+| GET    | [`/transactions`](../OpenAPI/transactions/listTransactions)        | Lists all incoming transactions.                                                                         |
 | GET    | [`/transactions/{id}`](../OpenAPI/transactions/getTransactionById) | Retrieves full transaction details by transaction ID, including status, amount, currency, and reference. |
 
 > Incoming SEPA transfers are created automatically upon receipt from partner banks and are read-only in the API.
