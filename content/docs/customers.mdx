@@ -6,12 +6,11 @@ icon: Users
 
 #### Overview
 
-The Customers API manages personal (B2C) and business (B2B) clients within the PaySaxas ecosystem.
+The Customers API manages individual (B2C) and business (B2B) clients within the PaySaxas ecosystem.
 Each customer represents a verified legal entity or natural person and has its own lifecycle, verification flow, and compliance context.
 
 > ***Multi-Entity Access Model***
 > A single login (email) can control multiple onboarded profiles:
->
 > - ***Individual*** profile ( type: individual) — verified via KYC.
 > - ***Business*** profile(s) (type: business) — verified via KYB.
 Each profile receives its own , verification session, accounts, and webhook audit trail. customer_id
@@ -31,19 +30,19 @@ Switching between profiles in the dashboard changes operational scope only — n
 
 ### Customer Process Flow & Statuses
 
-This section describes the full lifecycle of a Customer within the PaySaxas system — from pre-registration to active client status, including compliance
+This section describes the full lifecycle of a **Customer** within the PaySaxas system — from pre-registration to active client status, including compliance
 reviews, rejection cases, and offboarding.
-Flows differ for Individual and Corporate clients but follow the same regulatory and technical logic.
+Flows differ for **Individual** and **Business** clients but follow the same regulatory and technical logic.
 
 Lifecycle Separation:
 
 > Individual customers move automatically through verification (auto transitions).
-> Corporate customers require manual actions for each step (manual transitions).
+> Business customers require manual actions for each step (manual transitions).
 > Each status change generates an auditable event and a webhook notification per customer_id.
 
-### 2. Event Traceability
+### Event Traceability
 
-Each status change triggers an auditable event and webhook notification:
+Each status change triggers an auditable **event** and **webhook** **notification**:
 Contains only the unique customer identifier — no PII, statuses, or metadata are exposed.
 
 
@@ -65,7 +64,7 @@ Notes:
 
 ### Naming Convention
 
-> Status values use lowercase snake_case.
+> Status values use **lowercase snake_case**.
 > type field defines customer flow (individual or business).
 
 ```json

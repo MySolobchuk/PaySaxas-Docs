@@ -108,6 +108,178 @@ components:
             in: header
             name: X-Signature
     schemas:
+        WebhookPayload:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: Transaction identifier.
+                    example: txn_00231a
+            required:
+                - id
+        TransactionsListResponse:
+            type: object
+            properties:
+                data:
+                    type: array
+                    description: List of transaction objects.
+                    items:
+                        $ref: '#/components/schemas/Transaction'
+                pagination:
+                    type: object
+                    properties:
+                        next_cursor:
+                            type: string
+                            nullable: true
+                            description: Cursor for the next page. If omitted or `null`, there are no more results.
+            required:
+                - data
+                - pagination
+        Transaction:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: Unique transaction identifier.
+                    example: txn_345ab9
+                account_id:
+                    type: string
+                    description: Linked account ID.
+                    example: acc_782b4f
+                type:
+                    type: string
+                    description: Transaction direction — `incoming` or `outgoing`.
+                    enum: [ incoming, outgoing ]
+                    example: incoming
+                amount:
+                    type: number
+                    format: float
+                    description: Transaction amount in EUR.
+                    example: 2500.00
+                currency:
+                    type: string
+                    description: Always "EUR".
+                    example: EUR
+                status:
+                    type: string
+                    description: Unified lifecycle status.
+                    enum: [ pending, processing, completed, failed, returned ]
+                    example: completed
+                reference:
+                    type: string
+                    description: External or internal reference.
+                    example: INV-2025-0032
+                created_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp of creation (ISO 8601, UTC).
+                    example: 2025-01-15T10:15:00Z
+            required:
+                - id
+                - account_id
+                - type
+                - amount
+                - currency
+                - status
+                - created_at
+        WebhookMinimalPayload:
+            type: object
+            additionalProperties: false
+            properties:
+                id:
+                    type: string
+                    description: ID of the affected entity (payment or transaction).
+                    example: obj_123456
+            required: [id]
+        Beneficiary:
+            type: object
+            properties:
+                name:
+                    type: string
+                    description: Beneficiary legal name.
+                    example: John Doe
+                iban:
+                    type: string
+                    description: Beneficiary IBAN (Finnish IBAN used in examples).
+                    example: FI1350001540000056
+                iban_status:
+                    type: string
+                    description: IBAN lifecycle status.
+                    enum: [ active, reserved, closed ]
+                    example: active
+            required:
+                - name
+                - iban
+                - iban_status
+        Payment:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: Unique payment identifier.
+                    example: pay_84910d
+                debtor_account_id:
+                    type: string
+                    description: Debited PaySaxas account ID.
+                    example: acc_72b24f
+                amount:
+                    type: number
+                    format: float
+                    description: Payment amount in EUR.
+                    example: 2500.00
+                currency:
+                    type: string
+                    description: Always "EUR".
+                    example: EUR
+                beneficiary:
+                    $ref: '#/components/schemas/Beneficiary'
+                reference:
+                    type: string
+                    description: Payment reference or remittance information.
+                    example: Invoice #3842
+                status:
+                    type: string
+                    description: Unified lifecycle status.
+                    enum: [ pending, processing, completed, failed, returned ]
+                    example: completed
+                created_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp of creation (ISO 8601, UTC).
+                    example: 2025-01-15T09:30:00Z
+                updated_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp of last status change (ISO 8601, UTC).
+                    example: 2025-01-15T10:02:00Z
+            required:
+                - id
+                - debtor_account_id
+                - amount
+                - currency
+                - beneficiary
+                - status
+                - created_at
+                - updated_at
+        PaymentsListResponse:
+            type: object
+            properties:
+                data:
+                    type: array
+                    description: List of payment objects.
+                    items:
+                        $ref: '#/components/schemas/Payment'
+
+                pagination:
+                    type: object
+                    properties:
+                        next_cursor:
+                            type: string
+                            nullable: true
+                            description: Cursor for the next page. If omitted or `null`, no additional pages are available.
+            required:
+                - data
+                - pagination
         Customer:
             type: object
             description: Full customer representation with immutable lifecycle fields.
@@ -816,37 +988,47 @@ paths:
                 - Example data are fictional placeholders.
     /transactions/{id}:
         get:
-            summary: Retrieve Transaction Details
+            summary: Retrieve Transaction Details2
             description: >
-                Returns read-only details of a specific transaction.  
-                Provider-specific states are abstracted to a unified lifecycle: pending, processing, completed, failed, reversed.  
-                Currency is always EUR.
+                Retrieves full details about a specific transaction by its unique ID.
+                Works for all transaction directions: incoming, outgoing.
             operationId: getTransactionById
             tags:
                 - Transactions
-            security:
-                -
-                    bearerAuth: [ ]
             parameters:
                 -
                     name: id
                     in: path
                     required: true
-                    description: Unique transaction identifier.
+                    description: Unique transaction identifier (e.g. `txn_345ab9`)
                     schema:
                         type: string
-                        example: txn_345ab9
+                -
+                    name: Authorization
+                    in: header
+                    required: true
+                    description:
+                        Bearer token for authentication. Example `Bearer YOUR_API_TOKEN`
+                    schema:
+                        type: string
+                -
+                    name: Accept
+                    in: header
+                    required: true
+                    description:
+                        Response format. Example `application/json`
+                    schema:
+                        type: string
                 -
                     name: X-Request-Id
                     in: header
                     required: false
-                    description: Optional request identifier for trace correlation.
+                    description: Optional trace identifier for logging and correlation.
                     schema:
                         type: string
-                        example: req_123e4567-e89b-12d3-a456-426614174000
             responses:
-                "200":
-                    description: Transaction details successfully retrieved.
+                '200':
+                    description: OK
                     content:
                         application/json:
                             schema:
@@ -862,120 +1044,136 @@ paths:
                                         example: acc_782b4f
                                     type:
                                         type: string
-                                        description: Direction of funds.
+                                        description:
+                                            Transaction direction — one of incoming, outgoing.
                                         enum: [ incoming, outgoing ]
                                         example: incoming
-                                    amount:
-                                        type: number
-                                        description: Transaction amount in EUR.
-                                        example: 2500.00
-                                    currency:
-                                        type: string
-                                        description: Currency code (always EUR).
-                                        enum: [ EUR ]
-                                        example: EUR
                                     status:
                                         type: string
                                         description: Unified lifecycle status.
-                                        enum: [ pending, processing, completed, failed, reversed ]
+                                        enum: [ pending, processing, completed, failed, returned ]
                                         example: completed
+                                    amount:
+                                        type: number
+                                        format: float
+                                        description: Transaction amount in EUR (immutable).
+                                        example: 1200.50
+                                    currency:
+                                        type: string
+                                        description: Always "EUR".
+                                        example: EUR
                                     reference:
                                         type: string
-                                        description: External or internal payment reference.
-                                        example: INV-2025-0032
-                                    created_at:
-                                        type: string
-                                        format: date-time
-                                        description: Timestamp of creation (ISO 8601, UTC).
-                                        example: "2025-01-15T10:15:00Z"
-                                    updated_at:
-                                        type: string
-                                        format: date-time
-                                        description: Timestamp of last update (ISO 8601, UTC).
-                                        example: "2025-01-15T10:30:00Z"
+                                        description: Payment or transfer reference.
+                                        example: Salary January 2025
+                                    sender:
+                                        type: object
+                                        description: Present only for incoming transactions.
+                                        properties:
+                                            name:
+                                                type: string
+                                                description: Sender name.
+                                                example: ACME GmbH
+                                            iban:
+                                                type: string
+                                                description: Sender IBAN (Finnish IBAN used in examples).
+                                                example: FI76512108001245126199
                                     metadata:
                                         type: object
-                                        description: Optional internal metadata (e.g., internal_reference).
+                                        description: Internal non-sensitive metadata.
                                         properties:
                                             internal_reference:
                                                 type: string
                                                 example: SAFE_TXN_8471
-                "400":
-                    description: Validation Error — invalid transaction ID or malformed request.
+                                    created_at:
+                                        type: string
+                                        format: date-time
+                                        description: Timestamp when the transaction was created (ISO 8601, UTC).
+                                        example: 2025-01-10T08:30:00Z
+                                    updated_at:
+                                        type: string
+                                        format: date-time
+                                        description: Timestamp of last status update (ISO 8601, UTC).
+                                        example: 2025-01-10T09:02:00Z
+                            examples:
+                                incomingExample:
+                                    summary: Incoming SEPA credit
+                                    value:
+                                        id: txn_908aa2
+                                        account_id: acc_32c410
+                                        type: incoming
+                                        status: completed
+                                        amount: 1200.50
+                                        currency: EUR
+                                        reference: Salary January 2025
+                                        sender:
+                                            name: ACME GmbH
+                                            iban: FI76512108001245126199
+                                        created_at: 2025-01-10T08:30:00Z
+                                        updated_at: 2025-01-10T09:02:00Z
+                                outgoingExample:
+                                    summary: Outgoing payment
+                                    value:
+                                        id: txn_345ac1
+                                        account_id: acc_782b4f
+                                        type: outgoing
+                                        status: completed
+                                        amount: 250.00
+                                        currency: EUR
+                                        reference: PAY-2025-0109
+                                        created_at: 2025-01-15T11:20:00Z
+                                        updated_at: 2025-01-15T11:35:00Z
+                '400':
+                    description: Validation Error — Invalid transaction ID or malformed request.
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    error_name: { type: string, example: Validation Error }
-                                    error_description: { type: string, example: Invalid transaction ID format. }
-                                    metadata:
-                                        type: object
-                                        properties:
-                                            trace_id: { type: string, example: tr_12af61 }
-                "401":
-                    description: Unauthorized — missing or invalid authentication token.
+                                $ref: '#/components/schemas/ErrorResponse'
+                            examples:
+                                validationError:
+                                    value:
+                                        error_name: Validation Error
+                                        error_description: Invalid transaction ID format.
+                                        metadata:
+                                            trace_id: tr_12af61
+                '401':
+                    description: Unauthorized — Missing or invalid authentication token.
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    error_name: { type: string, example: Unauthorized }
-                                    error_description: { type: string, example: Missing or invalid authentication token. }
-                                    metadata:
-                                        type: object
-                                        properties:
-                                            trace_id: { type: string, example: tr_7f22cc }
-                "403":
-                    description: Insufficient Permissions — scope `transactions:read` required.
+                                $ref: '#/components/schemas/ErrorResponse'
+                '403':
+                    description: Insufficient Permissions — Access denied (scope transactions:read required).
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    error_name: { type: string, example: Insufficient Permissions }
-                                    error_description: { type: string, example: Access denied — scope transactions:read required. }
-                                    metadata:
-                                        type: object
-                                        properties:
-                                            trace_id: { type: string, example: tr_55af10 }
-                "404":
-                    description: Transaction Not Found — transaction does not exist or belongs to another customer.
+                                $ref: '#/components/schemas/ErrorResponse'
+                '404':
+                    description: Transaction Not Found — The specified transaction does not exist or access is restricted.
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    error_name: { type: string, example: Transaction Not Found }
-                                    error_description: { type: string, example: Transaction with ID txn_345ab9 not found or access is restricted. }
-                                    metadata:
-                                        type: object
-                                        properties:
-                                            trace_id: { type: string, example: tr_5e71cb }
-                "500":
-                    description: Internal Error — unexpected server-side error.
+                                $ref: '#/components/schemas/ErrorResponse'
+                            examples:
+                                notFound:
+                                    value:
+                                        error_name: Transaction Not Found
+                                        error_description: Transaction with ID txn_345ab9 not found or access is restricted.
+                                        metadata:
+                                            trace_id: tr_5e71cb
+                '500':
+                    description: Internal Error — Unexpected server-side error.
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    error_name: { type: string, example: Internal Error }
-                                    error_description: { type: string, example: Unexpected processing error. }
-                                    metadata:
-                                        type: object
-                                        properties:
-                                            trace_id: { type: string, example: tr_82cb19 }
-            x-notes:
-                - Endpoint is read-only; transactions are immutable.
-                - Provider-specific states are hidden; only the unified lifecycle is exposed.
-                - Currency is fixed to EUR across all transactions.
+                                $ref: '#/components/schemas/ErrorResponse'
     /transactions:
         get:
             summary: List Transactions
             description: >
-                Returns a **cursor-paginated** list of transactions for the authenticated customer.  
-                Provider-specific states are abstracted to a unified lifecycle: pending, processing, completed, failed, reversed.  
-                Currency is always EUR.
+                Retrieves a paginated list of transactions for the authenticated customer.  
+                Transactions are immutable ledger records and returned in read-only mode.  
+                Uses cursor-based pagination only — no filtering, search, sorting, or limit parameters are supported.
             operationId: listTransactions
             tags:
                 - Transactions
@@ -984,250 +1182,119 @@ paths:
                     bearerAuth: [ ]
             parameters:
                 -
-                    name: account_id
-                    in: query
-                    required: false
-                    description: Filter by specific account ID.
-                    schema:
-                        type: string
-                        example: acc_782b4f
-                -
-                    name: date_from
-                    in: query
-                    required: false
-                    description: Start of date range (ISO 8601, UTC).
-                    schema:
-                        type: string
-                        format: date-time
-                        example: "2025-01-01T00:00:00Z"
-                -
-                    name: date_to
-                    in: query
-                    required: false
-                    description: End of date range (ISO 8601, UTC).
-                    schema:
-                        type: string
-                        format: date-time
-                        example: "2025-01-31T23:59:59Z"
-                -
-                    name: type
-                    in: query
-                    required: false
-                    description: Transaction direction.
-                    schema:
-                        type: string
-                        enum: [ incoming, outgoing ]
-                        example: incoming
-                -
-                    name: status
-                    in: query
-                    required: false
-                    description: Unified lifecycle status.
-                    schema:
-                        type: string
-                        enum: [ pending, processing, completed, failed, reversed ]
-                        example: completed
-                -
-                    name: reference
-                    in: query
-                    required: false
-                    description: Filter by external or internal reference.
-                    schema:
-                        type: string
-                        example: INV-2025-0032
-                -
                     name: cursor
                     in: query
                     required: false
-                    description: Cursor token for the next page. Use `pagination.next_cursor` from the previous response.
+                    description: Cursor for pagination; use the `next_cursor` value from the previous response.
                     schema:
                         type: string
-                        example: eyJwYWdlIjoyfQ==
                 -
-                    name: limit
-                    in: query
-                    required: false
-                    description:
-                        Number of records per page. Default:25 Max 100.
+                    name: Authorization
+                    in: header
+                    required: true
+                    description: Authentication token.
                     schema:
-                        type: integer
-                        example: 25
+                        type: string
+                        example: Bearer YOUR_API_TOKEN
+                -
+                    name: Accept
+                    in: header
+                    required: true
+                    description: Response format.
+                    schema:
+                        type: string
+                        example: application/json
                 -
                     name: X-Request-Id
                     in: header
                     required: false
-                    description: Optional request identifier for trace correlation.
+                    description: Optional trace identifier for logging and correlation.
                     schema:
                         type: string
                         example: req_123e4567-e89b-12d3-a456-426614174000
             responses:
-                "200":
-                    description: List of transactions successfully retrieved.
+                '200':
+                    description: Transactions list successfully retrieved.
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    data:
-                                        type: array
-                                        description: List of transaction objects.
-                                        items:
-                                            type: object
-                                            properties:
-                                                id:
-                                                    type: string
-                                                    description: Unique transaction identifier.
-                                                    example: txn_345ab9
-                                                account_id:
-                                                    type: string
-                                                    description: Linked account ID.
-                                                    example: acc_782b4f
-                                                type:
-                                                    type: string
-                                                    description: Direction of funds.
-                                                    enum: [ incoming, outgoing ]
-                                                    example: incoming
-                                                amount:
-                                                    type: number
-                                                    description: Transaction amount in EUR.
-                                                    example: 2500.00
-                                                currency:
-                                                    type: string
-                                                    description: Currency code (always EUR).
-                                                    enum: [ EUR ]
-                                                    example: EUR
-                                                status:
-                                                    type: string
-                                                    description: Unified lifecycle status.
-                                                    enum: [ pending, processing, completed, failed, reversed ]
-                                                    example: completed
-                                                reference:
-                                                    type: string
-                                                    description: External or internal reference.
-                                                    example: INV-2025-0032
-                                                created_at:
-                                                    type: string
-                                                    format: date-time
-                                                    description: Timestamp of creation (ISO 8601, UTC).
-                                                    example: "2025-01-15T10:15:00Z"
-                                    pagination:
-                                        type: object
-                                        description: Cursor pagination object.
-                                        properties:
-                                            limit:
-                                                type: integer
-                                                description: Current page size.
-                                                example: 25
-                                            next_cursor:
-                                                type: string
-                                                description: Opaque token for the next page (if available).
-                                                example: eyJwYWdlIjoyfQ==
-                                            has_more:
-                                                type: boolean
-                                                description: Whether more pages exist.
-                                                example: true
-                "204":
-                    description: No transactions found for the specified filters.
-                "400":
-                    description: Validation Error — invalid filter parameter or date format.
+                                $ref: '#/components/schemas/TransactionsListResponse'
+                            examples:
+                                success:
+                                    value:
+                                        data:
+                                            -
+                                                id: txn_345ab9
+                                                account_id: acc_782b4f
+                                                type: incoming
+                                                amount: 2500.00
+                                                currency: EUR
+                                                status: completed
+                                                reference: INV-2025-0032
+                                                created_at: 2025-01-15T10:15:00Z
+                                            -
+                                                id: txn_345ac1
+                                                account_id: acc_782b4f
+                                                type: outgoing
+                                                amount: 120.75
+                                                currency: EUR
+                                                status: failed
+                                                reference: PAY-2025-0109
+                                                created_at: 2025-01-15T11:20:00Z
+                                        pagination:
+                                            next_cursor: eyJwYWdlIjoyfQ==
+                '400':
+                    description: Malformed cursor or invalid request.
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    error_name:
-                                        type: string
-                                        example: Validation Error
-                                    error_description:
-                                        type: string
-                                        example: Invalid filter parameter or date format.
-                                    metadata:
-                                        type: object
-                                        properties:
-                                            trace_id:
-                                                type: string
-                                                example: tr_12af61
-                "401":
-                    description: Unauthorized — missing or invalid authentication token.
+                                $ref: '#/components/schemas/ErrorResponse'
+                            examples:
+                                invalidCursor:
+                                    value:
+                                        error_name: Validation Error
+                                        error_description: Invalid cursor value.
+                                        metadata:
+                                            trace_id: tr_12af61
+                '401':
+                    description: Missing or invalid authentication token.
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    error_name:
-                                        type: string
-                                        example: Unauthorized
-                                    error_description:
-                                        type: string
-                                        example: Missing or invalid authentication token.
-                                    metadata:
-                                        type: object
-                                        properties:
-                                            trace_id:
-                                                type: string
-                                                example: tr_7f22cc
-                "403":
-                    description: Insufficient Permissions — scope `transactions:read` required.
+                                $ref: '#/components/schemas/ErrorResponse'
+                            examples:
+                                unauthorized:
+                                    value:
+                                        error_name: Unauthorized
+                                        error_description: Invalid or missing token.
+                                        metadata:
+                                            trace_id: tr_48cb19
+                '403':
+                    description: Access denied — scope `transactions:read` required.
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    error_name:
-                                        type: string
-                                        example: Insufficient Permissions
-                                    error_description:
-                                        type: string
-                                        example: Access denied — scope transactions:read required.
-                                    metadata:
-                                        type: object
-                                        properties:
-                                            trace_id:
-                                                type: string
-                                                example: tr_55af10
-                "404":
-                    description: Account Not Found — the specified account does not exist or is inactive.
+                                $ref: '#/components/schemas/ErrorResponse'
+                            examples:
+                                insufficientPermissions:
+                                    value:
+                                        error_name: Insufficient Permissions
+                                        error_description: Scope transactions:read required.
+                                        metadata:
+                                            trace_id: tr_66ac11
+                '500':
+                    description: Unexpected server-side error.
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    error_name:
-                                        type: string
-                                        example: Account Not Found
-                                    error_description:
-                                        type: string
-                                        example: The specified account does not exist or is inactive.
-                                    metadata:
-                                        type: object
-                                        properties:
-                                            trace_id:
-                                                type: string
-                                                example: tr_5e71cb
-                "500":
-                    description: Internal Error — unexpected server-side error.
-                    content:
-                        application/json:
-                            schema:
-                                type: object
-                                properties:
-                                    error_name:
-                                        type: string
-                                        example: Internal Error
-                                    error_description:
-                                        type: string
-                                        example: Unexpected processing error.
-                                    metadata:
-                                        type: object
-                                        properties:
-                                            trace_id:
-                                                type: string
-                                                example: tr_82cb19
-            x-notes:
-                - Cursor-based pagination only; offset pagination is not supported.
-                - Transactions are immutable and read-only.
-                - Provider-specific states are hidden; only the unified lifecycle is exposed.
-                - Currency is fixed to EUR across all transactions.
+                                $ref: '#/components/schemas/ErrorResponse'
+                            examples:
+                                internalError:
+                                    value:
+                                        error_name: Internal Error
+                                        error_description: Unexpected processing error.
+                                        metadata:
+                                            trace_id: tr_82cb19
     /accounts/{id}/ibans:
         get:
             summary: List vIBANs for an Account
@@ -1930,6 +1997,554 @@ paths:
                 - All IBAN and BIC values are masked in examples; real identifiers are tokenized and encrypted.
                 - The `metadata` field must not contain any personal or sensitive data.
                 - Currency is fixed to EUR for all accounts and issued IBANs.
+    /payments/{id}:
+        get:
+            summary: Retrieve Outgoing Payment Details
+            description: >
+                Retrieves detailed information about a specific outgoing SEPA Credit Transfer (SEPA OUT)
+                by its unique identifier.  
+                The endpoint provides read-only data on payment status and settlement outcome.  
+                All provider-specific routing, AML, and settlement logic are abstracted under a unified PaySaxas lifecycle model.
+            operationId: getPaymentById
+            tags:
+                - Payments
+            parameters:
+                -
+                    name: id
+                    in: path
+                    required: true
+                    schema:
+                        type: string
+                    description: Unique payment identifier (e.g. `pay_84910d`)
+                -
+                    name: Authorization
+                    in: header
+                    required: true
+                    schema:
+                        type: string
+                        example: Bearer YOUR_API_TOKEN
+                    description: Authentication token
+                -
+                    name: Accept
+                    in: header
+                    required: true
+                    schema:
+                        type: string
+                        example: application/json
+                    description: Response format
+                -
+                    name: X-Request-Id
+                    in: header
+                    required: false
+                    schema:
+                        type: string
+                        example: req_123e4567-e89b-12d3-a456-426614174000
+                    description: Optional trace identifier for logging and correlation
+            responses:
+                '200':
+                    description: Payment details successfully retrieved
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    id:
+                                        type: string
+                                        description: Unique payment identifier
+                                        example: pay_84910d
+                                    debtor_account_id:
+                                        type: string
+                                        description: Debited PaySaxas account ID
+                                        example: acc_72b24f
+                                    amount:
+                                        type: number
+                                        format: float
+                                        description: Payment amount in EUR
+                                        example: 2500.00
+                                    currency:
+                                        type: string
+                                        description: Always `"EUR"` for SEPA Credit Transfers
+                                        example: EUR
+                                    beneficiary:
+                                        type: object
+                                        properties:
+                                            name:
+                                                type: string
+                                                description: Beneficiary legal name
+                                                example: John Doe
+                                            iban:
+                                                type: string
+                                                description: Beneficiary IBAN (Finnish IBAN used in examples)
+                                                example: FI1350001540000056
+                                    reference:
+                                        type: string
+                                        description: Payment reference or remittance information
+                                        example: Invoice #3842
+                                    status:
+                                        type: string
+                                        description: >
+                                            Unified lifecycle status:  
+                                            • `created` — awaiting processing  
+                                            • `pending` — under AML/compliance checks  
+                                            • `completed` — settled and reconciled  
+                                            • `failed` — could not be processed  
+                                            • `returned` — funds refunded or reversed
+                                        example: completed
+                                    details:
+                                        type: object
+                                        properties:
+                                            reason_code:
+                                                type: string
+                                                nullable: true
+                                                description: SEPA or EPC reason code for failed or returned payments
+                                                example: null
+                                            reason_description:
+                                                type: string
+                                                nullable: true
+                                                description: Human-readable explanation mapped from reason code
+                                                example: null
+                                    created_at:
+                                        type: string
+                                        format: date-time
+                                        description: Timestamp when the payment was created (ISO 8601 UTC)
+                                        example: 2025-01-15T09:30:00Z
+                                    updated_at:
+                                        type: string
+                                        format: date-time
+                                        description: Timestamp of latest status change (ISO 8601 UTC)
+                                        example: 2025-01-15T10:02:00Z
+                            examples:
+                                success:
+                                    value:
+                                        id: pay_84910d
+                                        debtor_account_id: acc_72b24f
+                                        amount: 2500.00
+                                        currency: EUR
+                                        beneficiary:
+                                            name: John Doe
+                                            iban: FI1350001540000056
+                                        reference: Invoice #3842
+                                        status: completed
+                                        details:
+                                            reason_code: null
+                                            reason_description: null
+                                        created_at: 2025-01-15T09:30:00Z
+                                        updated_at: 2025-01-15T10:02:00Z
+                '400':
+                    description: Invalid payment ID or malformed request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    error_name:
+                                        type: string
+                                        example: Validation Error
+                                    error_description:
+                                        type: string
+                                        example: Invalid payment ID format.
+                                    metadata:
+                                        type: object
+                                        properties:
+                                            trace_id:
+                                                type: string
+                                                example: tr_12af61
+                '401':
+                    description: Missing or invalid authentication token
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    error_name:
+                                        type: string
+                                        example: Unauthorized
+                                    error_description:
+                                        type: string
+                                        example: Invalid or expired token.
+                                    metadata:
+                                        type: object
+                                        properties:
+                                            trace_id:
+                                                type: string
+                                                example: tr_48cb19
+                '403':
+                    description: Access denied — scope `payments:read` required
+                '404':
+                    description: Payment does not exist or belongs to another customer
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    error_name:
+                                        type: string
+                                        example: Payment Not Found
+                                    error_description:
+                                        type: string
+                                        example: Payment with ID pay_84910d not found or access is restricted.
+                                    metadata:
+                                        type: object
+                                        properties:
+                                            trace_id:
+                                                type: string
+                                                example: tr_5e71cb
+                '500':
+                    description: Unexpected server-side error
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    error_name:
+                                        type: string
+                                        example: Internal Error
+                                    error_description:
+                                        type: string
+                                        example: Unexpected processing error.
+                                    metadata:
+                                        type: object
+                                        properties:
+                                            trace_id:
+                                                type: string
+                                                example: tr_82cb19
+    /payments:
+        get:
+            summary: Retrieve Outgoing Payments
+            description: >
+                Retrieves a paginated list of outgoing SEPA Credit Transfers (SEPA OUT).  
+                The endpoint is read-only and returns payments created by the authenticated customer.  
+                Results are provided through cursor-based pagination.
+            operationId: listPayments
+            tags:
+                - Payments
+            security:
+                -
+                    bearerAuth: [ ]
+            parameters:
+                -
+                    name: cursor
+                    in: query
+                    required: false
+                    description: Cursor for pagination; use the `next_cursor` value from the previous response.
+                    schema:
+                        type: string
+                -
+                    name: Accept
+                    in: header
+                    required: true
+                    description: Response format.
+                    schema:
+                        type: string
+                        example: application/json
+                -
+                    name: X-Request-Id
+                    in: header
+                    required: false
+                    description: Trace identifier for logging and correlation.
+                    schema:
+                        type: string
+                        example: req_123e4567-e89b-12d3-a456-426614174000
+            responses:
+                '200':
+                    description: Payments list successfully retrieved.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PaymentsListResponse'
+                            examples:
+                                success:
+                                    value:
+                                        data:
+                                            -
+                                                id: pay_84910d
+                                                debtor_account_id: acc_72b24f
+                                                amount: 2500.00
+                                                currency: EUR
+                                                beneficiary:
+                                                    name: John Doe
+                                                    iban: FI1350001540000056
+                                                    iban_status: active
+                                                reference: Invoice #3842
+                                                status: completed
+                                                created_at: 2025-01-15T09:30:00Z
+                                                updated_at: 2025-01-15T10:02:00Z
+                                            -
+                                                id: pay_84910e
+                                                debtor_account_id: acc_72b24f
+                                                amount: 150.75
+                                                currency: EUR
+                                                beneficiary:
+                                                    name: Acme Corp
+                                                    iban: FI6150001510000051
+                                                    iban_status: closed
+                                                reference: Refund #INV2025-02
+                                                status: failed
+                                                created_at: 2025-01-16T08:50:00Z
+                                                updated_at: 2025-01-16T09:05:00Z
+                                        pagination:
+                                            next_cursor: eyJvZmZzZXQiOiJwYXlfOTk5OTkifQ
+                '400':
+                    description: Malformed cursor or invalid request.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                            examples:
+                                invalidCursor:
+                                    value:
+                                        error_name: Validation Error
+                                        error_description: Invalid cursor value.
+                                        metadata:
+                                            trace_id: tr_12af61
+                '401':
+                    description: Missing or invalid authentication token.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                            examples:
+                                unauthorized:
+                                    value:
+                                        error_name: Unauthorized
+                                        error_description: Invalid or missing token.
+                                        metadata:
+                                            trace_id: tr_48cb19
+                '403':
+                    description: Access denied — scope `payments:read` required.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                            examples:
+                                insufficientPermissions:
+                                    value:
+                                        error_name: Insufficient Permissions
+                                        error_description: Scope payments:read required.
+                                        metadata:
+                                            trace_id: tr_66ac11
+                '500':
+                    description: Unexpected server-side error.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                            examples:
+                                internalError:
+                                    value:
+                                        error_name: Internal Error
+                                        error_description: Unexpected processing error.
+                                        metadata:
+                                            trace_id: tr_82cb19
+    /payments/sepa-credit-transfers:
+        post:
+            summary: Create Outgoing SEPA Credit Transfer
+            description: >
+                Creates a new outgoing SEPA Credit Transfer (SEPA OUT).  
+                Payments are validated, queued, and processed asynchronously.  
+                Once created, a payment cannot be modified — only cancelled before processing.
+            operationId: createSepaCreditTransfer
+            tags:
+                - Payments
+            security:
+                -
+                    bearerAuth: [ ]
+            parameters:
+                -
+                    name: Authorization
+                    in: header
+                    required: true
+                    schema:
+                        type: string
+                        example: Bearer YOUR_API_TOKEN
+                    description: Authentication token.
+                -
+                    name: Accept
+                    in: header
+                    required: true
+                    schema:
+                        type: string
+                        example: application/json
+                    description: Response format.
+                -
+                    name: X-Request-Id
+                    in: header
+                    required: false
+                    schema:
+                        type: string
+                        example: req_123e4567-e89b-12d3-a456-426614174000
+                    description: Optional trace identifier for logging and correlation.
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - debtor_account_id
+                                - amount
+                                - currency
+                                - beneficiary
+                            properties:
+                                debtor_account_id:
+                                    type: string
+                                    description: PaySaxas account ID to debit funds from.
+                                    example: acc_782b4f
+                                amount:
+                                    type: number
+                                    format: float
+                                    description: Amount in EUR to transfer.
+                                    example: 250.00
+                                currency:
+                                    type: string
+                                    description: Must always be `"EUR"`.
+                                    example: EUR
+                                beneficiary:
+                                    type: object
+                                    required:
+                                        - name
+                                        - iban
+                                    properties:
+                                        name:
+                                            type: string
+                                            description: Recipient legal name.
+                                            example: ACME Oy
+                                        iban:
+                                            type: string
+                                            description: Recipient IBAN (validated per ISO 13616).
+                                            example: FI1350001540000056
+                                reference:
+                                    type: string
+                                    maxLength: 140
+                                    description: Optional payment reference text.
+                                    example: Invoice #2025-0098
+                        examples:
+                            example:
+                                value:
+                                    debtor_account_id: acc_782b4f
+                                    amount: 250.00
+                                    currency: EUR
+                                    beneficiary:
+                                        name: ACME Oy
+                                        iban: FI1350001540000056
+                                    reference: Invoice #2025-0098
+            responses:
+                '201':
+                    description: Payment successfully created.
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    id:
+                                        type: string
+                                        description: Unique payment ID.
+                                        example: pay_84910d
+                                    debtor_account_id:
+                                        type: string
+                                        description: Account from which the payment was initiated.
+                                        example: acc_782b4f
+                                    amount:
+                                        type: number
+                                        description: Payment amount (EUR).
+                                        example: 250.00
+                                    currency:
+                                        type: string
+                                        description: Always `"EUR"`.
+                                        example: EUR
+                                    beneficiary:
+                                        type: object
+                                        properties:
+                                            name:
+                                                type: string
+                                                description: Recipient legal name.
+                                                example: ACME Oy
+                                            iban:
+                                                type: string
+                                                description: Recipient IBAN.
+                                                example: FI1350001540000056
+                                    reference:
+                                        type: string
+                                        description: Payment reference text.
+                                        example: Invoice #2025-0098
+                                    status:
+                                        type: string
+                                        description: >
+                                            Unified lifecycle status:  
+                                            • `pending` — created and awaiting processing  
+                                            • `processing` — under AML or operational checks  
+                                            • `completed` — credited and reconciled  
+                                            • `failed` — could not be processed  
+                                            • `returned` — refunded after rejection
+                                        example: pending
+                                    created_at:
+                                        type: string
+                                        format: date-time
+                                        description: Timestamp of creation (ISO 8601, UTC).
+                                        example: 2025-01-15T10:30:00Z
+                            examples:
+                                success:
+                                    value:
+                                        id: pay_84910d
+                                        debtor_account_id: acc_782b4f
+                                        amount: 250.00
+                                        currency: EUR
+                                        beneficiary:
+                                            name: ACME Oy
+                                            iban: FI1350001540000056
+                                        reference: Invoice #2025-0098
+                                        status: pending
+                                        created_at: 2025-01-15T10:30:00Z
+                '400':
+                    description: Invalid or missing required fields.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                            examples:
+                                validationError:
+                                    value:
+                                        error_name: Validation Error
+                                        error_description: Invalid payload or missing fields.
+                                        metadata:
+                                            trace_id: tr_12af61
+                '401':
+                    description: Missing or invalid token.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '403':
+                    description: Access denied — scope `payments:create` required.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '404':
+                    description: Provided `debtor_account_id` does not exist or is inactive.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '409':
+                    description: Duplicate payment detected for the same account, amount, IBAN, and reference within 60 seconds.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                            examples:
+                                duplicatePayment:
+                                    value:
+                                        error_name: Duplicate Payment
+                                        error_description: Duplicate payment detected for the same account, amount, IBAN, and reference within 60 seconds.
+                                        metadata:
+                                            trace_id: tr_82cb19
+                '500':
+                    description: Unexpected processing error.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
 webhooks:
     accounts_ibans:
         post:
@@ -1946,11 +2561,16 @@ webhooks:
                 -
                     HMACSignature: [ ]
             parameters:
-                - $ref: '#/components/parameters/AccountsXEventHeader'
-                - $ref: '#/components/parameters/XSignatureHeader'
-                - $ref: '#/components/parameters/XRequestIdHeader'
-                - $ref: '#/components/parameters/DateHeader'
-                - $ref: '#/components/parameters/JsonContentTypeHeader'
+                -
+                    $ref: '#/components/parameters/AccountsXEventHeader'
+                -
+                    $ref: '#/components/parameters/XSignatureHeader'
+                -
+                    $ref: '#/components/parameters/XRequestIdHeader'
+                -
+                    $ref: '#/components/parameters/DateHeader'
+                -
+                    $ref: '#/components/parameters/JsonContentTypeHeader'
             requestBody:
                 description: Minimal JSON body containing only the related entity identifier.
                 required: true
@@ -1958,7 +2578,8 @@ webhooks:
                     application/json:
                         schema:
                             allOf:
-                                - $ref: '#/components/schemas/WebhookIdentifierPayload'
+                                -
+                                    $ref: '#/components/schemas/WebhookIdentifierPayload'
                             description: >
                                 Unique identifier of the related entity.  
                                 For account events — account ID.  
@@ -2008,26 +2629,31 @@ webhooks:
             x-delivery:
                 transport: HTTPS (TLS 1.2+)
                 headers:
-                    - name: X-Event
-                      required: true
-                      example: account.created
-                      description: Event type (not present in body).
-                    - name: X-Signature
-                      required: true
-                      example: sha256=5f2a4d9e...
-                      description: HMAC SHA-256 signature of the raw body using the shared secret.
-                    - name: X-Request-Id
-                      required: true
-                      example: req_9a7c4e2f
-                      description: UUIDv4 used for deduplication and idempotency.
-                    - name: Date
-                      required: true
-                      example: Wed, 05 Nov 2025 12:45:30 GMT
-                      description: Timestamp for replay protection (reject if skew > 5 minutes).
-                    - name: Content-Type
-                      required: true
-                      example: application/json
-                      description: Always JSON.
+                    -
+                        name: X-Event
+                        required: true
+                        example: account.created
+                        description: Event type (not present in body).
+                    -
+                        name: X-Signature
+                        required: true
+                        example: sha256=5f2a4d9e...
+                        description: HMAC SHA-256 signature of the raw body using the shared secret.
+                    -
+                        name: X-Request-Id
+                        required: true
+                        example: req_9a7c4e2f
+                        description: UUIDv4 used for deduplication and idempotency.
+                    -
+                        name: Date
+                        required: true
+                        example: Wed, 05 Nov 2025 12:45:30 GMT
+                        description: Timestamp for replay protection (reject if skew > 5 minutes).
+                    -
+                        name: Content-Type
+                        required: true
+                        example: application/json
+                        description: Always JSON.
             x-examples:
                 -
                     title: Account created
@@ -2306,3 +2932,146 @@ webhooks:
                 - Always verify `X-Signature` and the `Date` header to prevent spoofing or replay attacks.
                 - Webhooks never include personal, financial, or KYC/KYB data.
                 - Always call `GET /customers/\{id\}` after receiving a webhook to fetch full customer data.
+    paymentEvents:
+        post:
+            summary: Payment Events Webhook
+            description: >
+                Notifies your endpoint about asynchronous lifecycle changes of outgoing payments.  
+                Payload contains **only** the entity `id` (no names, IBANs, amounts, or other PII).  
+                Respond with **2xx** within **5 seconds**. On non-2xx, deliveries are retried with exponential backoff.
+                Deduplicate using `X-Request-Id` together with the received `id`. After receiving a webhook,
+                fetch details via API (`GET /payments/{id}`).
+            tags: [ Payments ]
+            parameters:
+                -
+                    in: header
+                    name: Content-Type
+                    required: true
+                    schema:
+                        type: string
+                        example: application/json
+                    description: Always JSON payload.
+                -
+                    in: header
+                    name: X-Event
+                    required: true
+                    schema:
+                        type: string
+                        enum: [ payment.created, payment.completed, payment.failed, payment.returned ]
+                    description: Event type.
+                -
+                    in: header
+                    name: X-Signature
+                    required: true
+                    schema:
+                        type: string
+                        example: sha256=f28b1e7c4df9...
+                    description: HMAC SHA-256 of the raw body using the shared secret.
+                -
+                    in: header
+                    name: X-Request-Id
+                    required: true
+                    schema:
+                        type: string
+                        example: req_9a7c4e2f
+                    description: Unique delivery ID for correlation and deduplication.
+                -
+                    in: header
+                    name: Date
+                    required: false
+                    schema:
+                        type: string
+                        example: Wed, 05 Nov 2025 12:45:30 GMT
+                    description: Optional timestamp for replay protection (validate with ±5 min skew).
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/WebhookMinimalPayload'
+                        examples:
+                            payment.completed:
+                                summary: Payment completed
+                                value: { id: "pay_84910d" }
+                            payment.returned:
+                                summary: Payment returned
+                                value: { id: "pay_84910e" }
+            responses:
+                "200":
+                    description: Acknowledge receipt. Respond with any 2xx within 5 seconds.
+    transactionEvents:
+        post:
+            summary: Transaction Events Webhook
+            description: >
+                Notifies your endpoint about transaction lifecycle updates in real time.  
+                Each webhook payload contains **only** the transaction `id`.  
+                To retrieve full details, call `GET /transactions/{id}`.  
+                Respond with **2xx** within **5 seconds** to acknowledge receipt.  
+                On non-2xx, deliveries are retried up to **3 times** within 24 hours using exponential backoff.  
+                Deduplicate using both `X-Request-Id` and the received `id`.  
+                HTTPS (TLS 1.2 or higher) is required for delivery.
+            tags: [ Transactions ]
+            parameters:
+                -
+                    in: header
+                    name: Content-Type
+                    required: true
+                    schema:
+                        type: string
+                        example: application/json
+                    description: Always present. Defines the format of the webhook body.
+                -
+                    in: header
+                    name: X-Event
+                    required: true
+                    schema:
+                        type: string
+                        enum: [ transaction.created, transaction.completed, transaction.failed, transaction.returned ]
+                    description: Indicates the event type.
+                -
+                    in: header
+                    name: X-Signature
+                    required: true
+                    schema:
+                        type: string
+                        example: sha256=f28b1e7c4df9...
+                    description: HMAC SHA-256 of the raw request body using the shared secret. Used to verify authenticity.
+                -
+                    in: header
+                    name: X-Request-Id
+                    required: true
+                    schema:
+                        type: string
+                        example: req_123e4567-e89b-12d3-a456-426614174000
+                    description: Unique webhook delivery identifier used for logging, deduplication, and retries.
+                -
+                    in: header
+                    name: Date
+                    required: false
+                    schema:
+                        type: string
+                        example: Wed, 05 Nov 2025 12:45:30 GMT
+                    description: Optional timestamp for replay protection (recommended ±5 minutes tolerance).
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/WebhookPayload'
+                        examples:
+                            transaction.completed:
+                                summary: Transaction completed
+                                value: { "id": "txn_00231a" }
+                            transaction.created:
+                                summary: Transaction created
+                                value: { "id": "txn_00231a" }
+                            transaction.failed:
+                                summary: Transaction failed
+                                value: { "id": "txn_00231a" }
+                            transaction.returned:
+                                summary: Transaction returned
+                                value: { "id": "txn_00231a" }
+            responses:
+                "200":
+                    description: Acknowledge receipt. Respond with any 2xx within 5 seconds.
+

@@ -4,6 +4,7 @@
   "pages": [
     "accounts",
     "customers",
+    "payments",
     "transactions"
   ]
 }

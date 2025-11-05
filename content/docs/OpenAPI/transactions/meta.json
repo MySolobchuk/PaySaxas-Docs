@@ -4,6 +4,7 @@
   "pages": [
     "listTransactions",
     "getTransactionById",
-    "deliverTransactionWebhook"
+    "deliverTransactionWebhook",
+    "transactionevents"
   ]
 }

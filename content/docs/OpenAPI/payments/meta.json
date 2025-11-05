@@ -1,0 +1,10 @@
+{
+  "title": "Payments",
+  "icon": "CreditCard",
+  "pages": [
+    "listPayments",
+    "getPaymentById",
+    "createSepaCreditTransfer",
+    "paymentevents"
+  ]
+}
