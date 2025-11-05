@@ -27,11 +27,10 @@ Relationship:
 
 Process for account creation, validation, and lifecycle management.
 
-| Method | Endpoint         | Description                                                                                     |
-|--------|------------------|-------------------------------------------------------------------------------------------------|
-| POST   | /accounts        | Creates a new account for a verified customer.                                                  |
-| GET    | /accounts        | Retrieves a list of all accounts associated with the verified customer.                         |
-| GET    | `/accounts/{id}` | Retrieves detailed information about a specific account (currency, balances, status, metadata). |
+| Method | Endpoint                                               | Description                                                                                     |
+|--------|--------------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| GET    | [`/accounts`](../OpenAPI/accounts/listAccounts)        | Retrieves a list of all accounts associated with the verified customer.                         |
+| GET    | [`/accounts/{id}`](../OpenAPI/accounts/getAccountById) | Retrieves detailed information about a specific account (currency, balances, status, metadata). |
 
 #### Lifecycle & Status Flow
 
@@ -86,10 +85,10 @@ To successfully create an account:
 
 Operations for issuing and managing virtual IBANs linked to an account.
 
-| Method | Endpoint               | Description                                                |
-|--------|------------------------|------------------------------------------------------------|
-| POST   | `/accounts/{id}/ibans` | Issues a new virtual IBAN linked to the specified account. |
-| GET    | `/accounts/{id}/ibans` | Returns all virtual IBANs associated with the account.     |
+| Method | Endpoint                                                         | Description                                                |
+|--------|------------------------------------------------------------------|------------------------------------------------------------|
+| POST   | [`/accounts/{id}/ibans`](../OpenAPI/accounts/issueNewIban)       | Issues a new virtual IBAN linked to the specified account. |
+| GET    | [`/accounts/{id}/ibans`](../OpenAPI/accounts/listIbansByAccount) | Returns all virtual IBANs associated with the account.     |
 
 IBANs are used to enable both incoming and outgoing payments for customer accounts.
 Each issued IBAN is uniquely linked to an account and can be used to receive SEPA transfers or initiate outgoing payments under the same customer
@@ -119,3 +118,6 @@ Example payloads demonstrate both successful issuance and potential error cases,
 
 > IBAN and BIC are examples only — not real financial identifiers.
 ### Webhooks (Account events)
+
+[See the OpenAPI webhook definition →](../OpenAPI/accounts/deliverAccountsIbanWebhook)
+

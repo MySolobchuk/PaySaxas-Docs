@@ -63,7 +63,7 @@ Notes:
 - Delivery retries up to 24h (max 3 attempts).
 - All transitions are logged immutably and are auditable by Compliance.
 
-### 3. Naming Convention
+### Naming Convention
 
 > Status values use lowercase snake_case.
 > type field defines customer flow (individual or business).
@@ -77,14 +77,14 @@ Notes:
 }
 ```
 
-### 4. Endpoints
+### Endpoints
 
-| Method | Endpoint          | Description                                     | Success     | Typical Errors                                                                                             |
-|--------|-------------------|-------------------------------------------------|-------------|------------------------------------------------------------------------------------------------------------|
-| POST   | /customers        | Create a new customer (individual or business). | 201 Created | 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 INSUFFICIENT_PERMISSIONS, 409 DUPLICATE_CUSTOMER               |
-| GET    | /customers        | Retrieve a paginated list of customers.         | 200 OK      | 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 INSUFFICIENT_PERMISSIONS                                       |
-| GET    | `/customers/{id}` | Retrieve customer details.                      | 200 OK      | 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 INSUFFICIENT_PERMISSIONS, 404 CUSTOMER_NOT_FOUND               |
-| PATCH  | `/customers/{id}` | Update customer metadata or internal notes.     | 200 OK      | 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 INSUFFICIENT_PERMISSIONS, 404 CUSTOMER_NOT_FOUND, 409 CONFLICT |
+| Method | Endpoint                                                         | Description                                     | Success     | Typical Errors                                                                                             |
+|--------|------------------------------------------------------------------|-------------------------------------------------|-------------|------------------------------------------------------------------------------------------------------------|
+| POST   | [`/customers`](../OpenAPI/customers/createCustomer)              | Create a new customer (individual or business). | 201 Created | 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 INSUFFICIENT_PERMISSIONS, 409 DUPLICATE_CUSTOMER               |
+| GET    | [`/customers`](../OpenAPI/customers/listCustomers)               | Retrieve a paginated list of customers.         | 200 OK      | 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 INSUFFICIENT_PERMISSIONS                                       |
+| GET    | [`/customers/{id}`](../OpenAPI/customers/getCustomerById)        | Retrieve customer details.                      | 200 OK      | 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 INSUFFICIENT_PERMISSIONS, 404 CUSTOMER_NOT_FOUND               |
+| PATCH  | [`/customers/{id}`](../OpenAPI/customers/updateCustomerMetadata) | Update customer metadata or internal notes.     | 200 OK      | 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 INSUFFICIENT_PERMISSIONS, 404 CUSTOMER_NOT_FOUND, 409 CONFLICT |
 
 #### Scopes
 
@@ -94,3 +94,6 @@ Notes:
 **Idempotency Header:** `X-Request-Id: <UUIDv4>`
 
 ### Webhooks — Customer Events
+
+[See the OpenAPI webhook definition →](OpenAPI/customers/deliverCustomerWebhook)
+

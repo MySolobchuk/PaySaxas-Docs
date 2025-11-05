@@ -14,27 +14,25 @@ PaySaxas integrates multiple regulated payment providers.
 Each provider (e.g., SEPA IN/OUT gateways, internal ledgers) has its own routing, AML, and exception flow.
 However, the public API exposes a single normalised status model:
 
-| Status | Description |
-| --- | --- |
-| pending | Transaction created and awaiting confirmation. |
+| Status      | Description                                     |
+|-------------|-------------------------------------------------|
+| pending     | Transaction created and awaiting confirmation.  |
 | in_progress | Processing by payment rails or internal ledger. |
-| completed | Funds successfully settled. |
-| failed | Payment rejected or not processed. |
-| reversed | Transaction refunded, reversed, or returned. |
+| completed   | Funds successfully settled.                     |
+| failed      | Payment rejected or not processed.              |
+| reversed    | Transaction refunded, reversed, or returned.    |
 
 > Internal routing (e.g., “AML Review”, “Finance Freeze”, “Settlement Exception”) is never exposed in API responses.
 > Provider-specific transitions are aggregated into these unified statuses.
 
 ### Endpoints
 
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| GET | /transactions | Returns a list of transactions filtered by parameters. |
-| GET | `/transactions/{id}` | Returns full transaction details. |
-
-| Method | Endpoint | Link |
-| --- | --- | --- |
-| GET | /transactions | GET /transactions — List Transactions |
-| GET | `/transactions/{id}` | GET `/transactions/{id}` — Retrieve Transaction Details |
+| Method | Endpoint                                                        | Description                                            |
+|--------|-----------------------------------------------------------------|--------------------------------------------------------|
+| GET    | [`/transactions`](../OpenAPI/transactions/listTransactions)        | Returns a list of transactions filtered by parameters. |
+| GET    | [`/transactions/{id}`](../OpenAPI/transactions/getTransactionById) | Returns full transaction details.                      |
 
 ### Webhooks — Transaction Events
+
+[See the OpenAPI webhook definition →](../OpenAPI/transactions/deliverTransactionWebhook)
+
