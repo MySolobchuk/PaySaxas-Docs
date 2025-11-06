@@ -3,6 +3,7 @@
   <component name="CIAidSettingsState">
     <option name="yamlToUserMarkings">
       <map>
+        <entry key="$PROJECT_DIR$/openapi/api.yaml" value="true" />
         <entry key="$PROJECT_DIR$/openapi/syda.yaml" value="true" />
       </map>
     </option>
